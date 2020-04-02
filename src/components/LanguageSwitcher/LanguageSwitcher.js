@@ -2,7 +2,7 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import withStyles from 'isomorphic-style-loader/lib/withStyles';
+import useStyles from 'isomorphic-style-loader/useStyles';
 import { connect } from 'react-redux';
 import { setLocale } from '../../actions/intl';
 import s from './LanguageSwitcher.css';
@@ -14,40 +14,32 @@ const localeDict = {
   /* @intl-code-template-end */
 };
 
-class LanguageSwitcher extends React.Component {
-  static propTypes = {
-    currentLocale: PropTypes.string.isRequired,
-    availableLocales: PropTypes.arrayOf(PropTypes.string).isRequired,
-    setLocale: PropTypes.func.isRequired,
-  };
+function LanguageSwitcher({ currentLocale, availableLocales, setLocale }) {
+  const isSelected = locale => locale === currentLocale;
+  const localeName = locale => localeDict[locale] || locale;
+  useStyles(s);
 
-  render() {
-    const { currentLocale, availableLocales, setLocale } = this.props;
-    const isSelected = locale => locale === currentLocale;
-    const localeName = locale => localeDict[locale] || locale;
-
-    return (
-      <div className={s.root}>
-        {availableLocales.map(locale => (
-          <span key={locale}>
-            {isSelected(locale) ? (
-              <span>{localeName(locale)}</span>
-            ) : (
-              <a
-                href={`?lang=${locale}`}
-                onClick={e => {
-                  setLocale({ locale });
-                  e.preventDefault();
-                }}
-              >
-                {localeName(locale)}
-              </a>
-            )}{' '}
-          </span>
-        ))}
-      </div>
-    );
-  }
+  return (
+    <div className={s.root}>
+      {availableLocales.map(locale => (
+        <span key={locale}>
+          {isSelected(locale) ? (
+            <span>{localeName(locale)}</span>
+          ) : (
+            <a
+              href={`?lang=${locale}`}
+              onClick={e => {
+                setLocale({ locale });
+                e.preventDefault();
+              }}
+            >
+              {localeName(locale)}
+            </a>
+          )}{' '}
+        </span>
+      ))}
+    </div>
+  );
 }
 
 const mapState = state => ({
@@ -59,4 +51,10 @@ const mapDispatch = {
   setLocale,
 };
 
-export default connect(mapState, mapDispatch)(withStyles(s)(LanguageSwitcher));
+LanguageSwitcher.propTypes = {
+  currentLocale: PropTypes.string.isRequired,
+  availableLocales: PropTypes.arrayOf(PropTypes.string).isRequired,
+  setLocale: PropTypes.func.isRequired,
+};
+
+export default connect(mapState, mapDispatch)(LanguageSwitcher);

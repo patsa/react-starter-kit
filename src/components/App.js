@@ -9,14 +9,12 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
+import StyleContext from 'isomorphic-style-loader/StyleContext';
 import { IntlProvider } from 'react-intl';
 import { Provider as ReduxProvider } from 'react-redux';
 import { ApolloProvider } from 'react-apollo';
 
 const ContextType = {
-  // Enables critical path CSS rendering
-  // https://github.com/kriasoft/isomorphic-style-loader
-  insertCss: PropTypes.func.isRequired,
   // Universal HTTP client
   fetch: PropTypes.func.isRequired,
   pathname: PropTypes.string.isRequired,
@@ -45,7 +43,7 @@ const ContextType = {
  *   };
  *
  *   ReactDOM.render(
- *     <App context={context}>
+ *     <App context={context} insertCss={() => {}}>
  *       <Layout>
  *         <LandingPage />
  *       </Layout>
@@ -53,51 +51,30 @@ const ContextType = {
  *     container,
  *   );
  */
-class App extends React.PureComponent {
-  static propTypes = {
-    context: PropTypes.shape(ContextType).isRequired,
-    children: PropTypes.element.isRequired,
-  };
 
-  static childContextTypes = ContextType;
+export default function App({ context, insertCss, children }) {
+  // eslint-disable-next-line no-unused-vars
+  const childContextTypes = ContextType;
 
-  getChildContext() {
-    return this.props.context;
+  // eslint-disable-next-line no-unused-vars
+  function getChildContext() {
+    return context;
   }
-
-  // NOTE: This methods are not needed if you update URL by setLocale action.
-  //
-  //  componentDidMount() {
-  //    const store = this.props.context && this.props.context.store;
-  //    if (store) {
-  //      this.lastLocale = store.getState().intl.locale;
-  //      this.unsubscribe = store.subscribe(() => {
-  //        const state = store.getState();
-  //        const { newLocale, locale } = state.intl;
-  //        if (!newLocale && this.lastLocale !== locale) {
-  //          this.lastLocale = locale;
-  //          this.forceUpdate();
-  //        }
-  //      });
-  //    }
-  //  }
-  //
-  //  componentWillUnmount() {
-  //    if (this.unsubscribe) {
-  //      this.unsubscribe();
-  //      this.unsubscribe = null;
-  //    }
-  //  }
-
-  render() {
-    // Here, we are at universe level, sure? ;-)
-    const { client } = this.props.context;
-    // NOTE: If you need to add or modify header, footer etc. of the app,
-    // please do that inside the Layout component.
-    return (
-      <ApolloProvider client={client}>{this.props.children}</ApolloProvider>
-    );
-  }
+  // NOTE: If you need to add or modify header, footer etc. of the app,
+  // please do that inside the Layout component.
+  return (
+    <StyleContext.Provider value={{ insertCss }}>
+      <ApolloProvider client={{ context }}>
+        {React.Children.only(children)}
+      </ApolloProvider>
+    </StyleContext.Provider>
+  );
 }
 
-export default App;
+App.propTypes = {
+  context: PropTypes.shape(ContextType).isRequired,
+  // Enables critical path CSS rendering
+  // https://github.com/kriasoft/isomorphic-style-loader
+  insertCss: PropTypes.func.isRequired,
+  children: PropTypes.element.isRequired,
+};

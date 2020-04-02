@@ -7,9 +7,11 @@
  * LICENSE.txt file in the root directory of this source tree.
  */
 
+import useStyles from 'isomorphic-style-loader/useStyles';
 import React from 'react';
 import { defineMessages, FormattedMessage } from 'react-intl';
-import withStyles from 'isomorphic-style-loader/lib/withStyles';
+import PropTypes from 'prop-types';
+import { withApollo } from 'react-apollo';
 import s from './Header.css';
 import Link from '../Link';
 import Navigation from '../Navigation';
@@ -35,35 +37,41 @@ const messages = defineMessages({
   },
 });
 
-class Header extends React.Component {
-  render() {
-    return (
-      <div className={s.root}>
-        <div className={s.container}>
-          <Navigation />
-          <Link className={s.brand} to="/">
-            <img
-              src={logoUrl}
-              srcSet={`${logoUrl2x} 2x`}
-              width="38"
-              height="38"
-              alt="React"
-            />
-            <span className={s.brandTxt}>
-              <FormattedMessage {...messages.brand} />
-            </span>
-          </Link>
-          <LanguageSwitcher />
-          <div className={s.banner}>
-            <h1 className={s.bannerTitle}>
-              <FormattedMessage {...messages.bannerTitle} />
-            </h1>
-            <FormattedMessage tagName="p" {...messages.bannerDesc} />
-          </div>
+function Header({ client }) {
+  useStyles(s);
+  return (
+    <div className={s.root}>
+      <div className={s.container}>
+        <Navigation />
+        <Link className={s.brand} to="/">
+          <img
+            src={logoUrl}
+            srcSet={`${logoUrl2x} 2x`}
+            width="38"
+            height="38"
+            alt="React"
+          />
+          <span className={s.brandTxt}>
+            <FormattedMessage {...messages.brand} />
+          </span>
+        </Link>
+        <LanguageSwitcher
+          client={client.context}
+          store={client.context.store}
+        />
+        <div className={s.banner}>
+          <h1 className={s.bannerTitle}>
+            <FormattedMessage {...messages.bannerTitle} />
+          </h1>
+          <FormattedMessage tagName="p" {...messages.bannerDesc} />
         </div>
       </div>
-    );
-  }
+    </div>
+  );
 }
 
-export default withStyles(s)(Header);
+export default withApollo(Header);
+
+Header.propTypes = {
+  client: PropTypes.object.isRequired,
+};

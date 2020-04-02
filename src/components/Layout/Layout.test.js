@@ -45,13 +45,13 @@ describe('Layout', () => {
       .create(
         <App
           context={{
-            insertCss: () => {},
             fetch: () => {},
             pathname: '',
             intl,
             store,
             client,
           }}
+          insertCss={() => {}}
         >
           <Layout>
             <div className="child" />

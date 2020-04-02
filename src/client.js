@@ -12,13 +12,13 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import deepForceUpdate from 'react-deep-force-update';
 import queryString from 'query-string';
-import { createPath } from 'history/PathUtils';
-import { addLocaleData } from 'react-intl';
+import { addLocaleData, IntlProvider } from 'react-intl';
 // This is so bad: requiring all locale if they are not needed?
 /* @intl-code-template import ${lang} from 'react-intl/locale-data/${lang}'; */
 import en from 'react-intl/locale-data/en';
 import cs from 'react-intl/locale-data/cs';
 /* @intl-code-template-end */
+import { createPath } from 'history';
 import App from './components/App';
 import createFetch from './createFetch';
 import configureStore from './store/configureStore';
@@ -42,30 +42,29 @@ const apolloClient = createApolloClient();
 
 // Initialize a new Redux store
 // http://redux.js.org/docs/basics/UsageWithReact.html
-const store = configureStore(window.App.state, {
-  apolloClient,
-  fetch,
-  history,
-});
+const store = configureStore(window.App.state, { fetch, history });
+
+// Enables critical path CSS rendering
+// https://github.com/kriasoft/isomorphic-style-loader
+const insertCss = (...styles) => {
+  // eslint-disable-next-line no-underscore-dangle
+  const removeCss = styles.map(x => x._insertCss());
+  return () => {
+    removeCss.forEach(f => f());
+  };
+};
 
 // Global (context) variables that can be easily accessed from any React component
 // https://facebook.github.io/react/docs/context.html
 const context = {
-  // Enables critical path CSS rendering
-  // https://github.com/kriasoft/isomorphic-style-loader
-  insertCss: (...styles) => {
-    // eslint-disable-next-line no-underscore-dangle
-    const removeCss = styles.map(x => x._insertCss());
-    return () => {
-      removeCss.forEach(f => f());
-    };
-  },
   // For react-apollo
   client: apolloClient,
-  store,
-  storeSubscription: null,
   // Universal HTTP client
   fetch,
+  // Initialize a new Redux store
+  // http://redux.js.org/docs/basics/UsageWithReact.html
+  store,
+  storeSubscription: null,
   // intl instance as it can be get with injectIntl
   intl: store.dispatch(getIntl()),
 };
@@ -114,7 +113,11 @@ async function onLocationChange(location, action) {
 
     const renderReactApp = isInitialRender ? ReactDOM.hydrate : ReactDOM.render;
     appInstance = renderReactApp(
-      <App context={context}>{route.component}</App>,
+      <IntlProvider locale={store.getState().intl.locale}>
+        <App context={context} insertCss={insertCss}>
+          {route.component}
+        </App>
+      </IntlProvider>,
       container,
       () => {
         if (isInitialRender) {
